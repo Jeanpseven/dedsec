@@ -13,35 +13,47 @@ def ascii():
 
 
 ascii()
+
                                                             
-# Obtém o diretório atual do script
-diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+# Função para listar os scripts na pasta "scripts"
+def listar_scripts():
+    script_dir = "scripts"  # Diretório dos scripts
+    scripts = os.listdir(script_dir)  # Lista os arquivos na pasta
 
-# Obtém a lista de arquivos no diretório atual
-arquivos = os.listdir(diretorio_atual)
-
-# Filtra apenas os arquivos com extensão .py
-scripts_python = [arquivo for arquivo in arquivos if arquivo.endswith('.py')]
-
-# Imprime os nomes e números dos scripts Python
-print("Scripts Python disponíveis:")
-for i, script in enumerate(scripts_python, start=1):
-    print(f"{i}. {script}")
-
-# Solicita ao usuário o número do script a ser executado
-numero_script = input("Digite o número do script a ser executado (0 para sair): ")
-
-# Valida a entrada do usuário
-if numero_script.isdigit():
-    numero_script = int(numero_script)
-    if numero_script >= 1 and numero_script <= len(scripts_python):
-        # Executa o script selecionado
-        script_selecionado = scripts_python[numero_script - 1]
-        comando_execucao = f"python {script_selecionado}"
-        os.system(comando_execucao)
-    elif numero_script == 0:
-        print("Saindo do programa.")
+    if not scripts:
+        print("Nenhum script encontrado na pasta.")
     else:
-        print("Número inválido. Saindo do programa.")
+        print("Scripts disponíveis:")
+        for i, script in enumerate(scripts):
+            print(f"{i+1}. {script}")
+
+# Função para executar um script específico
+def executar_script(script):
+    script_dir = "scripts"  # Diretório dos scripts
+    script_path = os.path.join(script_dir, script)  # Caminho completo do script
+
+    if os.path.isfile(script_path):
+        try:
+            exec(open(script_path).read())
+        except Exception as e:
+            print(f"Erro ao executar o script {script}: {str(e)}")
+    else:
+        print(f"O script {script} não existe.")
+
+# Listar os scripts disponíveis
+listar_scripts()
+
+# Solicitar ao usuário para escolher um script
+escolha = input("Escolha o número do script para executar (ou '0' para sair): ")
+
+if escolha == "0":
+    print("Encerrando o programa.")
 else:
-    print("Entrada inválida. Saindo do programa.")
+    scripts = os.listdir("scripts")
+    if escolha.isdigit() and int(escolha) <= len(scripts):
+        script = scripts[int(escolha) - 1]
+        print(f"Executando o script {script}:")
+        executar_script(script)
+    else:
+        print("Opção inválida. Por favor, escolha um número válido.")
+
