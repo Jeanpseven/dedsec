@@ -1,39 +1,52 @@
 import os
-
+import requests
 
 def ascii():
-# Obtém o nome de usuário local
-username = os.getlogin()
+    # Obtém o nome de usuário local
+    username = os.getlogin()
 
-# Define a cor vermelha para a barra
-red = "\033[48;5;196m"
-reset = "\033[0m"
+    # Define a cor vermelha para a barra
+    red = "\033[48;5;196m"
+    reset = "\033[0m"
 
-# Define o conteúdo do MOTD
-motd_content = f"{red}=================================================={reset}\n" \
-               f"          root@{username}\n" \
-               f"{red}=================================================={reset}\n" \
-               "/ $$$$$$   /$$$$$$$$ /$$$$$$$   /$$$$$$   /$$$$$$$$  /$$$$$$\n" \
-               "| $$__ $$ | $$_____/| $$__  $$ /$$__  $$ | $$_____/ /$$__  $$\n" \
-               "| $$ \\ $$| $$      | $$  \\ $$|$$  \\__/| $$      | $$  \\__/\n" \
-               "| $$  | $$| $$$$$   | $$  |  $$|  $$$$$$ | $$$$$   | $$      \n" \
-               "| $$  | $$| $$__/   | $$  |  $$ \\____ $$| $$__/   | $$      \n" \
-               "| $$  | $$| $$      | $$  |  $$ /$$  \\$$| $$      | $$    $$\n" \
-               "| $$$$$$$/| $$$$$$$$| $$$$$$$/|  $$$$$$/ | $$$$$$$$|  $$$$$$/\n" \
-               "|_______/ |________/|_______/  \\______/ |________/ \\______/  \n"
+    # Define o conteúdo do MOTD
+    motd_content = f"{red}=================================================={reset}\n" \
+                   f"          root@{username}\n" \
+                   f"{red}=================================================={reset}\n" \
+                   "/ $$$$$$   /$$$$$$$$ /$$$$$$$   /$$$$$$   /$$$$$$$$  /$$$$$$\n" \
+                   "| $$__ $$ | $$_____/| $$__  $$ /$$__  $$ | $$_____/ /$$__  $$\n" \
+                   "| $$ \\ $$| $$      | $$  \\ $$|$$  \\__/| $$      | $$  \\__/\n" \
+                   "| $$  | $$| $$$$$   | $$  |  $$|  $$$$$$ | $$$$$   | $$      \n" \
+                   "| $$  | $$| $$__/   | $$  |  $$ \\____ $$| $$__/   | $$      \n" \
+                   "| $$  | $$| $$      | $$  |  $$ /$$  \\$$| $$      | $$    $$\n" \
+                   "| $$$$$$$/| $$$$$$$$| $$$$$$$/|  $$$$$$/ | $$$$$$$$|  $$$$$$/\n" \
+                   "|_______/ |________/|_______/  \\______/ |________/ \\______/  \n"
 
-# Define o caminho do arquivo MOTD
-motd_path = "/etc/motd"
+    # Define o caminho do arquivo MOTD
+    motd_path = "/etc/motd"
+
+    print(motd_content)
+
+    # Escreve o conteúdo no arquivo MOTD
+    with open(motd_path, "w") as motd_file:
+        motd_file.write(motd_content)
 
 
-ascii()
+def get_repo_list(username, page):
+    per_page = 100  # Número máximo de repositórios por página (limite da API)
+    url = f"https://api.github.com/users/{username}/repos?page={page}&per_page={per_page}"
+    response = requests.get(url)
+    repos = response.json()
+    return repos
 
-# Escreve o conteúdo no arquivo MOTD
-with open(motd_path, "w") as motd_file:
-    motd_file.write(motd_content)
+
+def download_repo(repo_name, download_url):
+    response = requests.get(download_url)
+    with open(repo_name, 'wb') as f:
+        f.write(response.content)
+    print(f"Repositório '{repo_name}' baixado com sucesso.")
 
 
-# Função para renomear as pastas removendo o sufixo "-main"
 def renomear_pastas():
     script_dir = "scripts"  # Diretório dos scripts
     subpastas = next(os.walk(script_dir))[1]  # Lista as subpastas na pasta
@@ -52,7 +65,7 @@ def renomear_pastas():
             except Exception as e:
                 print(f"Erro ao renomear a pasta '{subpasta}': {str(e)}")
 
-# Função para listar e executar os scripts nas subpastas da pasta "scripts"
+
 def listar_e_executar_scripts():
     script_dir = "scripts"  # Diretório dos scripts
     subpastas = next(os.walk(script_dir))[1]  # Lista as subpastas na pasta
@@ -109,9 +122,59 @@ def listar_e_executar_scripts():
     else:
         print("Opção inválida. Por favor, escolha um número válido.")
 
+
 # Renomear as pastas antes de listar e executar os scripts
 renomear_pastas()
 
 # Listar e executar os scripts nas subpastas da pasta "scripts"
 listar_e_executar_scripts()
 
+# Obtém o nome de usuário local
+username = os.getlogin()
+
+# Chama a função ascii()
+ascii()
+
+# Obtém a lista de repositórios do usuário
+page = 1
+repos = get_repo_list(username, page)
+
+while True:
+    # Exibe a lista numerada de repositórios
+    print(f"Repositórios disponíveis para {username} (Página {page}):")
+    for index, repo in enumerate(repos, start=1):
+        print(f"{index}. {repo['name']}")
+
+    print("\nOpções:")
+    print("1. Baixar um repositório")
+    print("2. Listar mais repositórios")
+    print("3. Sair")
+
+    choice = input("Escolha uma opção (1/2/3): ")
+
+    if choice == '1':
+        repo_number = input("Digite o número do repositório para baixar: ")
+        try:
+            repo_index = int(repo_number) - 1
+            if 0 <= repo_index < len(repos):
+                repo = repos[repo_index]
+                repo_name = repo['name']
+                repo_download_url = repo['html_url'] + "/archive/master.zip"
+                download_repo(repo_name, repo_download_url)
+            else:
+                print("Número de repositório inválido.")
+        except ValueError:
+            print("Entrada inválida. Digite um número válido.")
+
+    elif choice == '2':
+        page += 1
+        repos = get_repo_list(username, page)
+        if not repos:
+            print("Não há mais repositórios disponíveis.")
+            page -= 1
+
+    elif choice == '3':
+        break
+
+    else:
+        print("Opção inválida. Por favor, tente novamente.")
